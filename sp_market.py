@@ -1,85 +1,79 @@
 import sqlite3
 import time
- 
-t = time.localtime(time.time())
-localtime = time.asctime(t)
-strtime = "Current Time:" + time.asctime(t)
 
-conn = sqlite3.connect('customers.sqlite')
-cur = conn.cursor() 
-conn1 = sqlite3.connect('products.sqlite')
-cur1 = conn1.cursor()
+# Connecting to the database and creating cursor 
+conn = sqlite3.connect('all_data.sqlite')
+cur = conn.cursor()
+cur.execute('''CREATE TABLE IF NOT EXISTS PRODUCTSDATA (product_name TEXT, price INTEGER, barcode TEXT )''')
+cur.execute('''CREATE TABLE IF NOT EXISTS CUSTOMERSDATA (name TEXT , email TEXT , count INTEGER)''')
 
-cur1.execute('''CREATE TABLE IF NOT EXISTS PRODUCTSDATA (product_name TEXT, price INTEGER, barcode TEXT )''')
-
-
+# adding a product
 while True:
-    products_name = []
-    products_price = []
-    products_barcode = []
     q =input("Wanna add a product? ")
     if q == "yes":
         newproduct = input('Enter product name! : ')
         product_price = float(input('Enter the price! : '))
         barcode = input('Enter the product barocde!: ')
-        cur1.execute('INSERT INTO PRODUCTSDATA (product_name, price, barcode)VALUES (?,?,?)',(newproduct,product_price,barcode))
-        cur1.execute('SELECT product_name,price FROM PRODUCTSDATA WHERE barcode = ? ', (barcode,))
-        conn1.commit()
-        row1 = cur1.fetchone()
-        sqlstr1 = 'SELECT product_name, price,barcode FROM PRODUCTSDATA ORDER BY price DESC LIMIT 30'
-        something = cur1.execute(sqlstr1)
-        
-        '''for row1 in something:
-            product_name_column = row1[0]
-            price_column = row1[1]
-            barcode_column = row1[2]
-            products_name.append(product_name_column)
-            products_price.append(price_column)
-        print(products_name)'''
-        
+        cur.execute('INSERT INTO PRODUCTSDATA (product_name, price, barcode)VALUES (?,?,?)',(newproduct,product_price,barcode))
+        cur.execute('SELECT product_name,price FROM PRODUCTSDATA WHERE barcode = ? ', (barcode,))
+        # sqlstr1 = 'SELECT product_name, price,barcode FROM PRODUCTSDATA ORDER BY price DESC LIMIT 30'
+        # something = cur.execute(sqlstr1)
     else:
-        sqlstr1 = 'SELECT product_name, price,barcode FROM PRODUCTSDATA ORDER BY price DESC LIMIT 30'
-        something = cur1.execute(sqlstr1)
-        '''for row1 in something:
-            product_name_column = row1[0]
-            price_column = row1[1]
-            barcode_column = row1[2]
-            products_name.append(product_name_column)
-            products_price.append(price_column)
-            print(barcode_column)'''
-    break
+        break
+        # sqlstr1 = 'SELECT product_name, price,barcode FROM PRODUCTSDATA ORDER BY price DESC LIMIT 30'
+        # something = cur.execute(sqlstr1)
+        
 
-
-cur.execute('''CREATE TABLE IF NOT EXISTS DATA ( name TEXT, email TEXT, count INTEGER )''')
+# Cashier process till the end of the code
 cashier_q = input('Cashier? : ')
-if cashier_q == "yes":    
-    name = input("Enter your name: ")
-    email = input("Enter your email: ")
+if cashier_q == "yes":
+    name = input("Enter your name: ").capitalize()
+    email = input("Enter your email: ").lower()
 
-    cur.execute('SELECT count FROM DATA WHERE name = ? ', (name,))
-
+    cur.execute('SELECT count FROM CUSTOMERSDATA WHERE email = ? ', (email,))
     row = cur.fetchone()
+    
     if row is None:
-        cur.execute('''INSERT INTO DATA (name, email, count)VALUES (?,?,1)''', (name,email))
+        cur.execute('''INSERT INTO CUSTOMERSDATA (name, email, count)VALUES (?,?,1)''', (name,email))
     else:
-        cur.execute('UPDATE DATA SET count = count + 1 WHERE email = ?',(email,))
+        cur.execute('UPDATE CUSTOMERSDATA SET count = count + 1 WHERE email = ?',(email,))
     conn.commit()
-
+else:
+    exit()
 
 values =list()
 receipt = dict()
 productinfo = []
+products_and_barcode = dict()
+
+# Date to be printed in receipt
+t = time.localtime(time.time())
+localtime = time.asctime(t)
+strtime = "Current Time:" + time.asctime(t)
+
 while True :   
         try:      
-            cashbarcode = input("BARCODE: ")
-            result = cur1.execute("SELECT product_name,price,barcode FROM PRODUCTSDATA WHERE barcode = ?",(cashbarcode,))
-            row_1 = cur1.fetchone()
-            nametaken = row_1[0]
+            # sqlstr1 = 'SELECT product_name,barcode FROM PRODUCTSDATA ORDER BY price DESC LIMIT 30'
+            # something = cur.execute(sqlstr1)
+            # for row1 in something:
+            #    products_and_barcode[row1[0]] = row1[1]
+            cur.execute('''SELECT * FROM PRODUCTSDATA ORDER BY price DESC LIMIT 40 ''')
+            rows = cur.fetchall()
+            for row in rows:
+                # print(row)    
+                products_and_barcode[row[0]] = row[2]
+            print(products_and_barcode)
+            cashier_barcode = input("BARCODE: ")
+            result = cur.execute("SELECT product_name,price,barcode FROM PRODUCTSDATA WHERE barcode = ?",(cashier_barcode,))
+            row = cur.fetchone()
+            nametaken = row[0]
             productinfo.append(nametaken)
-            pricetaken = row_1[1]
+            pricetaken = row[1]
             productinfo.append(pricetaken)
-            productinfo.append(cashbarcode)
+            productinfo.append(cashier_barcode)
+            print()
             print(productinfo)
+            print()            
             values.append(pricetaken)
             receipt[nametaken] = pricetaken
         except :
@@ -89,13 +83,16 @@ while True :
             print("Total price", total ,"$" )
             print(strtime)
             break
+print()
 
-sqlstr = 'SELECT email, count FROM DATA ORDER BY count DESC LIMIT 10'
-print("** Customers' email ***")
-for row in cur.execute(sqlstr):
+cur.execute('SELECT email, count FROM CUSTOMERSDATA ORDER BY count DESC LIMIT 10')
+rows = cur.fetchall()
+print("*** Customers' email ***")
+for row in rows:
     print(str(row[0]), row[1])
 
-#Offer
+# Offer
 if row[1] == 5:
     total = 0.75*total
     print("Total price after offer =",total,"$")
+cur.close
