@@ -19,7 +19,5 @@ Contributions to this project are welcome! If you have any suggestions, bug fixe
 Before contributing, please review the code of conduct to ensure a positive and inclusive environment for all contributors.
 
 # License
-This project is licensed under the MIT License.
-
 If you have any questions or need further assistance, feel free to contact the project maintainer at hossam.a.elnemr@gmail.com .
 You can also visit the project repository at https://github.com/Hossam-Elnemr/SuperMarket for more information.
